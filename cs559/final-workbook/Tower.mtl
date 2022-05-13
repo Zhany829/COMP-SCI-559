@@ -1,0 +1,50 @@
+#
+## Alias OBJ Material File
+# Exported from SketchUp, (c) 2000-2012 Trimble Navigation Limited
+
+newmtl Marble
+Ka 0.000000 0.000000 0.000000
+Kd 0.937255 0.925490 0.886275
+Ks 0.330000 0.330000 0.330000
+map_Kd San Fran Tower/Marble.png
+
+newmtl M_0133_Gray
+Ka 0.000000 0.000000 0.000000
+Kd 0.376471 0.376471 0.376471
+Ks 0.330000 0.330000 0.330000
+
+newmtl Steel
+Ka 0.000000 0.000000 0.000000
+Kd 0.600000 0.588235 0.564706
+Ks 0.330000 0.330000 0.330000
+map_Kd San Fran Tower/Steel.png
+
+newmtl Translucent_Glass_Green_Dark
+Ka 0.000000 0.000000 0.000000
+Kd 0.105882 0.407843 0.000000
+Ks 0.330000 0.330000 0.330000
+d 0.500000
+
+newmtl Metal_Embossed
+Ka 0.000000 0.000000 0.000000
+Kd 0.564706 0.564706 0.564706
+Ks 0.330000 0.330000 0.330000
+map_Kd San Fran Tower/Metal_Embossed.jpg
+
+newmtl FloorCover
+Ka 0.000000 0.000000 0.000000
+Kd 0.447059 0.419608 0.278431
+Ks 0.330000 0.330000 0.330000
+map_Kd San Fran Tower/FloorCover.png
+
+newmtl Translucent_Glass_Blue
+Ka 0.000000 0.000000 0.000000
+Kd 0.443137 0.611765 0.827451
+Ks 0.330000 0.330000 0.330000
+d 0.500000
+
+newmtl FrontColor
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.330000 0.330000 0.330000
+

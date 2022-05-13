@@ -1,0 +1,30 @@
+Please describe the buildings you created in this file 08-06-01.txt
+
+Explain how you made the buildings. 
+
+1. Building with a  ferrisWheel roof (top right corner)
+
+Firstly, I made a house without roof by simple using BoxGeometry.
+Then I use BufferGeometry with determined vertices and uvs to make the roof with a texture.
+The texture is something like red heart which makes the building romantic.
+Finally, I made a ferris wheel on the top of the roof, which people can go to take it.
+
+I think the shape is complex enough for this building.
+
+
+2.  Building with a rotating globe (top left corner)
+
+Firstly, I made a house without roof by simple using BoxGeometry.
+Then I make a rotating globe with a base and a supporter for a rotating globe.
+For the texture, I use world map texture on the rotating globe and starry sky for 
+    some sides of the building.
+
+I think the building shape is complex enough and tecture is fancy and has a Astronomy topic.
+
+3. Building with a lifting roof (bottom right corner)
+
+Firstly, I made a house without roof by making five walls and Marvel textures.
+Then I made four lifting sticks with a gazebo roof with a Marvel texture.
+Finally, I made the roof to go up and down.
+
+I think the building shape is complex enough and tecture is fancy and has a Marvel topic

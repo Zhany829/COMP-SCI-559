@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+    
+<!-- CS559 Workbook Pages - page content &copy; 2021, Michael Gleicher -->
+<!-- This page is part of a Workbook developed for the 
+    CS559 Computer Graphics Class at the University of Wisconsin
+    https://graphics.cs.wisc.edu/Courses/559-sp2021/ -->
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="../../css/workbook.css">
+        <script src="../../js/resizeIFrames.js"></script>
+    </head>
+    <body>
+        <div class="container container--outer"><div class="maincolumn">
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header"><h1 class="post__title">Page 1: Meshes: What you need to know</h1>
+		</header>
+        
+        
+        
+		<div class="content post__content clearfix"><p>We discussed meshes in class. Here are the things you need to know.</p>
+<h2 id="mesh-concepts">Mesh Concepts</h2>
+<p>The main concepts you need to know (some of these are discussed on this page, but many of them will come from lectures and the readings):</p>
+<ul>
+<li>What is a mesh (as a collection of triangles)</li>
+<li>Why we avoid &ldquo;Triangle Soup&rdquo;</li>
+<li>What is a good mesh
+<ul>
+<li>avoiding T-Junctions</li>
+<li>good triangles</li>
+<li>consistent orientations</li>
+</ul>
+</li>
+<li>Indexing vertices for efficiency</li>
+<li>Vertex and Face Properties</li>
+<li>The need for Vertex Sharing</li>
+<li>The need for fancy representations
+<ul>
+<li>You don&rsquo;t need to know a fancy representation (like Winged-Edge) but you should have a sense why they are important.</li>
+</ul>
+</li>
+<li>Efficiency tricks (strips and fans)
+<ul>
+<li>We&rsquo;ll only touch on these briefly</li>
+</ul>
+</li>
+</ul>
+<h2 id="meshes-and-geometry-and-buffergeometry-in-threejs">Meshes and Geometry and BufferGeometry in THREE.js</h2>
+<p>Confusingly, THREE.js uses the term <a href="https://graphics.cs.wisc.edu/Courses/559-sp21-three/three.js/docs/#api/en/core/Geometry" target="_blank">Geometry</a> to mean a collection of triangles, and uses the term <a href="https://cs559.github.io/ThreeDocs_r137/docs/index.html#api/en/objects/Mesh" target="_blank">Mesh</a> to mean a Geometry (collection of triangles) that has a material associated with it, and all of the other stuff that a &ldquo;Graphics Object&rdquo; has (e.g., transformations and hierarchy). A THREE <code>Mesh</code> &ldquo;has-a&rdquo; <code>Geometry</code>, but a <code>Geometry</code> is the collection of triangles that is more like the common graphics usage of &ldquo;mesh&rdquo;.</p>
+<p>THREE&rsquo;s terminology gets more confusing&hellip; In the old days, THREE had a <code>Geometry</code> class. This was a very flexible way to represent a set of triangles. It had an API that would allow a programmer to specify collections of triangles in many different ways. But, it was inefficient, so it introduced a much more efficient <code>BufferGeometry</code> class that organized triangle data using data structures that are inflexible, but efficient to send to graphics hardware. Almost everything in THREE (outside of graphics classes) uses <code>BufferGeometry</code>. So, when talking about &ldquo;Geometry&rdquo; (a collection of triangles), we&rsquo;re probably talking about <code>BufferGeometry</code>.</p>
+<p>The original <code>Geometry</code> was deprecated - so it doesn&rsquo;t actually exist inside the library (see <a href="https://sbcode.net/threejs/geometry-to-buffergeometry/">this</a> for details). We can still use it, because it is available as an &ldquo;add-on&rdquo; option (add-ins go into the &ldquo;examples&rdquo; directory, which is another THREE thing to get used to). If you want to read about <code>Geometry</code> you need to look at the old version of the documentation: the link <a href="https://graphics.cs.wisc.edu/Courses/559-sp21-three/three.js/docs/#api/en/core/Geometry" target="_blank">(documentation)</a> is to the 2021 version of this class. If you make a <code>Geometry</code> you can convert it to a <code>BufferGeometry</code> (it has a <code>toBufferGeometry</code> method, which isn&rsquo;t described in the documentation).</p>
+<p>In the old versions of CS559, we used the <code>Geometry</code> class. It was efficient enough, and it was easier to use, and it was more flexible. Basically, to understand <code>BufferGeometry</code> you need to understand the concept of a <em>buffer</em>, which doesn&rsquo;t come up in class until we discuss graphics hardware. The point of <code>BufferGeometry</code> is that it works the way the hardware does.</p>
+<p>In this workbook, we will discuss both <code>Geometry</code> and <code>BufferGeometry</code>. You can use either (remember to import the deprecated class and to convert the objects), however, we encourage you to use <code>BufferGeometry</code>. Some of our old code still uses Geometry, and it is useful for pedagogical purposes. It is a learning goal for you to understand the differences in the representations.</p>
+<p>Before we can understand these two, we need to talk about the basics of meshes.</p>
+<h2 id="triangles-and-meshes">Triangles and Meshes</h2>
+<p>Let&rsquo;s consider a connected collection of triangles. This is a &ldquo;mesh&rdquo; in the Computer Graphics sense, (but not a <code>Mesh</code> in terms of THREE). There are three types of &ldquo;objects&rdquo; that we encounter: the triangles themselves, the vertices (the corners of the triangles), and the edges (the connect pairs of vertices, and pairs of triangles). If the triangles connect, they will share vertices and edges. Any edge is part of 1 or 2 triangles, a vertex might be part of any number of triangles.</p>
+<p>Here is a diagram to help with the explanations:</p>
+<p><img src="../../images/meshes.png" width="500px" /></p>
+<p>The first mesh has 3 triangles (1,2,3), made from 5 vertices (A,B,C,D,E). The second mesh is two trangles (4,5), make from 5 vertices (F,G,H,I,J). We will use these to discuss some important properties of meshes.</p>
+<p>Generally, our meshes to have some properties that make them &ldquo;well-formed&rdquo;:</p>
+<ol>
+<li>
+<p><strong>No T-Junctions</strong> - triangles either share an edge (2 vertices) or not. Having a vertex that is &ldquo;on another triangle&rsquo;s edge&rdquo; is a bad idea. You can see this in the second picture. Vertex I is a T-junction: the point I is on the edge FH. For these triangles to &ldquo;touch&rdquo; point I must be in exactly the right place - otherwise there will be a &ldquo;crack&rdquo; (yes, that&rsquo;s a technical term). If it&rsquo;s off by a little bit (for example, because of rounding error or because we edit triangle 4), we get a crack. Therefore, if we want triangles to connect, they must share an entire edge - it&rsquo;s the only way to prevent cracks (we can&rsquo;t rely on perfect arithmetic).</p>
+</li>
+<li>
+<p><strong>Consistent Orientations</strong> - In 2D, all triangles should be either clockwise or counter clockwise. In Picture 1, our triangles are ABC, BDC, and BED (counter-clockwise) or ACB, CDB, DEB (clockwise). If we had ABC, BCD, BDE, they would be inconsistent. When the triangles are consistent, each edge has (at most) one triangle in each direction: note that the edge BC is BC in ABC but CB in DBC. In 3D, having consistent orientation is important because it means the cross products (normal vectors to the triangles) point in the same direction. Usually, we like to have them point outwards.</p>
+</li>
+<li>
+<p><strong>Vertex Sharing</strong> - If triangles share a vertex, we prefer to store this as a single vertex (that multiple triangles refer to), rather than as a bunch of different vertices. In the old days, this was an important performance consideration, because each vertex must be transformed, and the transformations were expensive. Now, sharing is important for other reasons. For example, it makes it easier to keep vertices consistent. In the example, note how vertex B is part of 3 triangles. If you move vertex B, the triangles stay connected.</p>
+</li>
+<li>
+<p><strong>Good Triangles</strong> - There are a bunch of other criteria that are less important now. But basically, we don&rsquo;t like our triangles to be too small, or have edges that are too short, and we don&rsquo;t like edges that are too close to each others. We&rsquo;ll come back to these properties later in the class.</p>
+</li>
+</ol>
+<p>Edges are useful data structures because they help relate triangles and enforce consistency. They are useful in building tools to edit meshes. But we generally don&rsquo;t use them much in computer graphics. The data structures that explicitly represent edges are cool and useful if you are changing meshes, but we won&rsquo;t learn about them in class - we&rsquo;ll make our meshes and not change their connectivity. These fancy data structures are discussed in the optional readings.</p>
+<p>For graphics, the main things with meshes are the vertices and the triangles. The data structures need to represent these two things.</p>
+<p>Because of vertex sharing, we often prefer to use an <strong>indexed</strong> representation. With an indexed representation, we keep an array of vertices (each with associated information). Each triangle just needs to have a list of the indices into the array of vertices. So, for the left figure, our &ldquo;vertex list&rdquo; would be [A,B,C,D,E], and our triangle list would be [0,1,2, 2,4,3, 2,5,4] (ABC, BDC, and BED).</p>
+<p>The alternative to well-formed meshes is an unorganized collection of triangles. This is sometimes referred to as <strong>triangle soup</strong>. Having structured meshes (vertex sharing, etc.) is useful because it makes it easier to maintain the collection (e.g., avoid cracking, having consistent normals, &hellip;). The efficiency gains of structured representations may be lost because we end up splitting vertices.</p>
+<h2 id="where-does-information-live-on-meshes">Where does information live on Meshes?</h2>
+<p>Consider specifying colors for the mesh. We might want to have the entire mesh be one color. We might want to put a color on a triangle (if we want to have each triangle be a solid color). We might want to allow each vertex to have a separate color (so the triangle has three colors, and interpolates between them in between). Here&rsquo;s an example of each one:</p>
+<iframe
+    title="08-01-01"
+    src="../../for_students/08-01-01.html"
+    class="includebox includebox-standard"
+    width="100%"
+    height="100%"
+    scrolling="no"
+    frameborder="0"
+></iframe>
+
+<p>The left one has a single color for the entire mesh (yellow). The middle one has a color for each triangle (yellow and orange). The right one has vertex colors (see how the colors interpolate over the triangles).</p>
+<p>Of course, we would like to have the flexibility to specify the information (color) anywhere we might like. This is where THREE&rsquo;s old <code>Geometry</code> class comes in handy: it stores an index representation of a collection of triangles. <code>Geometry</code> stores a Mesh as a vertex-indexed set of faces (where the faces are triangles). The <code>Geometry</code> class <a href="https://graphics.cs.wisc.edu/Courses/559-sp21-three/three.js/docs/#api/en/core/Geometry" target="_blank">(documentation)</a> stores a list of vertices (as <code>Vector3</code> positions). It also stores a list of Faces. Each face, refers to 3 vertices (by their index in the vertex array). Faces and vertices can both have properties (like color) attached to them.</p>
+<h2 id="attributes-and-buffers">Attributes and Buffers</h2>
+<p>For reasons relating to how the graphics hardware works, programs prefer to keep as information associated with the vertices (rather than the triangles). The <strong>attributes</strong> (like position and color) belong to the vertices. The triangles are created as sets of three vertices. They don&rsquo;t store any information other than the indices of the vertices (in fact, sometimes they don&rsquo;t even store that&hellip; but more on that in a moment).</p>
+<p>Now, you are hopefully wondering&hellip; how do we deal with the case where one vertex needs to have more than one color? For example, those points in the middle where the orange and yellow triangles connext - those vertices are both yellow and orange (depending on which triangle is using it). How can we have different attributes on shared vertices?</p>
+<p>The short answer is: we cannot. If all information lives on the vertices, we can only share vertices that have all their attributes in common. So, in this example, we cannot have a vertex that is both orange for one triangle and yellow for the other: we need to <strong>split</strong> the vertex into two different vertices. This goes against our goal of sharing (above).</p>
+<p>This &ldquo;all information on the vertices&rdquo; is inconvenient: for the middle pair of triangles, we can&rsquo;t simply make 4 vertices, and specify the colors of each triangle. We need to make 6 vertices, and set the color correctly for each one. This might seem wasteful, and it is a bit of a hassle, but the simplicity of having only one place for &ldquo;all&rdquo; information (all attributes are on vertices) makes many things simpler. It&rsquo;s how the graphics hardware works (we&rsquo;ll learn more later in the class). So it is actually way more efficient.</p>
+<p>Because all vertices are the same, we can make simple blocks of memory that store the values for all the vertices as one dimensional arrays. For example, the positions of vertices is just a long list of numbers (3 per vertex). We call blocks of memory &ldquo;buffers&rdquo;. We call a block of memory that is meant to store a list of attributes (per vertex) an <strong>AttributeBuffer</strong>. THREE calls them <code>BufferAttributes</code>. But they are just simple arrays of values - stored in a slightly special way to allow them to be transfered efficiently to the graphics hardware. This has to do with some technical details on how JavaScript handles types.</p>
+<p>THREE&rsquo;s <code>BufferGeometry</code> class stores a collection of triangles. It can have a number of <code>BufferAttributes</code> for the different attributes that you want associated with the vertices. It can handle the triangle indices in two ways: either it will assume that your vertices are in order (basically, your triangles are (0,1,2), (3,4,5), etc.), or you can give it a list of 3n (n=number of triangles) integers which are the indices of the vertices (3 per triangle).</p>
+<p>So, <code>Geometry</code> is convenient since it allowed us to put information on faces or vertices. <code>BufferGeometry</code> is fast because it can transfer the arrays directly to the graphics hardware. Speed won over convenience.</p>
+<p>For CS559, you can use either. If you want to use the old <code>Geometry</code>, you need to import the <code>deprecated/Geometry.js</code> file, and use the classes from there.</p>
+<h2 id="a-first-example">A First Example</h2>
+<p>The example (<a href="../../for_students/08-01-01.html" class="for_students">08-01-01.html</a> <a href="../../for_students/08-01-01.js" class="for_students">08-01-01.js</a>) shown above illustrates a simple case of making meshes using both <code>Geometry</code> and <code>BufferGeometry</code>. Here it is again:</p>
+<iframe
+    title="08-01-01"
+    src="../../for_students/08-01-01.html"
+    class="includebox includebox-standard"
+    width="100%"
+    height="100%"
+    scrolling="no"
+    frameborder="0"
+></iframe>
+
+<p>Read the code. You will see that I make objects (using the class framework) for &ldquo;TwoTriangles&rdquo; - and it is written six ways (mesh color, face color, vertex color - each written with <code>Geometry</code> and <code>BufferGeometry</code>).</p>
+<p>Here&rsquo;s the code for the two colored triangles using <code>Geometry</code>. You can see that I make an array of vertices (only 4, since I can share - lines 114-117), and that I can set the colors on the faces (lines 120 and 123).</p>
+
+    
+    <div class="highlight"><div style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">110
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">111
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">112
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">113
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">114
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">115
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">116
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">117
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">118
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">119
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">120
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">121
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">122
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">123
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">124
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">125
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">126
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">127
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">128
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">129
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">130
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">131
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">132
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">133
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">134
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">135
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#00a8c8">class</span> <span style="color:#75af00">TwoColoredTriangles</span> <span style="color:#00a8c8">extends</span> <span style="color:#75af00">GrObject</span> <span style="color:#111">{</span>
+  <span style="color:#75af00">constructor</span><span style="color:#111">()</span> <span style="color:#111">{</span>
+    <span style="color:#00a8c8">let</span> <span style="color:#75af00">geometry</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">Geom</span><span style="color:#111">.</span><span style="color:#75af00">Geometry</span><span style="color:#111">();</span>
+    <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>    <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">vertices</span><span style="color:#111">.</span><span style="color:#75af00">push</span><span style="color:#111">(</span><span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">Vector3</span><span style="color:#111">(</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#111">));</span>
+    <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">vertices</span><span style="color:#111">.</span><span style="color:#75af00">push</span><span style="color:#111">(</span><span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">Vector3</span><span style="color:#111">(</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span><span style="color:#111">));</span>
+    <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">vertices</span><span style="color:#111">.</span><span style="color:#75af00">push</span><span style="color:#111">(</span><span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">Vector3</span><span style="color:#111">(</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">2</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span><span style="color:#111">));</span>
+    <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">vertices</span><span style="color:#111">.</span><span style="color:#75af00">push</span><span style="color:#111">(</span><span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">Vector3</span><span style="color:#111">(</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#111">));</span>
+    <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>    <span style="color:#00a8c8">let</span> <span style="color:#75af00">f1</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">Geom</span><span style="color:#111">.</span><span style="color:#75af00">Face3</span><span style="color:#111">(</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#ae81ff">2</span><span style="color:#111">);</span>
+    <span style="color:#75af00">f1</span><span style="color:#111">.</span><span style="color:#75af00">color</span><span style="color:#111">.</span><span style="color:#75af00">setStyle</span><span style="color:#111">(</span><span style="color:#d88200">&#34;yellow&#34;</span><span style="color:#111">);</span>
+    <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">faces</span><span style="color:#111">.</span><span style="color:#75af00">push</span><span style="color:#111">(</span><span style="color:#75af00">f1</span><span style="color:#111">);</span>
+    <span style="color:#00a8c8">let</span> <span style="color:#75af00">f2</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">Geom</span><span style="color:#111">.</span><span style="color:#75af00">Face3</span><span style="color:#111">(</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#ae81ff">3</span><span style="color:#111">,</span> <span style="color:#ae81ff">2</span><span style="color:#111">);</span>
+    <span style="color:#75af00">f2</span><span style="color:#111">.</span><span style="color:#75af00">color</span><span style="color:#111">.</span><span style="color:#75af00">setStyle</span><span style="color:#111">(</span><span style="color:#d88200">&#34;orange&#34;</span><span style="color:#111">);</span>
+    <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">faces</span><span style="color:#111">.</span><span style="color:#75af00">push</span><span style="color:#111">(</span><span style="color:#75af00">f2</span><span style="color:#111">);</span>
+    <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">computeFaceNormals</span><span style="color:#111">();</span>
+    <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>    <span style="color:#00a8c8">let</span> <span style="color:#75af00">material</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">MeshStandardMaterial</span><span style="color:#111">({</span>
+      <span style="color:#75af00">roughness</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0.75</span><span style="color:#111">,</span>
+      <span style="color:#75af00">vertexColors</span><span style="color:#f92672">:</span> <span style="color:#00a8c8">true</span>
+    <span style="color:#111">});</span>
+    <span style="color:#00a8c8">let</span> <span style="color:#75af00">bg</span> <span style="color:#f92672">=</span> <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">toBufferGeometry</span><span style="color:#111">();</span>
+    <span style="color:#00a8c8">let</span> <span style="color:#75af00">mesh</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">Mesh</span><span style="color:#111">(</span><span style="color:#75af00">bg</span><span style="color:#111">,</span> <span style="color:#75af00">material</span><span style="color:#111">);</span>
+    <span style="color:#00a8c8">super</span><span style="color:#111">(</span><span style="color:#d88200">&#34;TwoTriangles2&#34;</span><span style="color:#111">,</span> <span style="color:#75af00">mesh</span><span style="color:#111">);</span>
+  <span style="color:#111">}</span>
+<span style="color:#111">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p>In contrast, here is the version of the code using <code>BufferGeometry</code>.</p>
+
+    
+    <div class="highlight"><div style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">142
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">143
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">144
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">145
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">146
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">147
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">148
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">149
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">150
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">151
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">152
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">153
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">154
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">155
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">156
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">157
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">158
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">159
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">160
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">161
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">162
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">163
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">164
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">165
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">166
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">167
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">168
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">169
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">170
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">171
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">172
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">173
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">174
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">175
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">176
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">177
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">178
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">179
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">180
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">181
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">182
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">183
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">184
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#00a8c8">class</span> <span style="color:#75af00">TwoColoredTrianglesBG</span> <span style="color:#00a8c8">extends</span> <span style="color:#75af00">GrObject</span> <span style="color:#111">{</span>
+    <span style="color:#75af00">constructor</span><span style="color:#111">()</span> <span style="color:#111">{</span>
+      <span style="color:#00a8c8">let</span> <span style="color:#75af00">geometry</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">BufferGeometry</span><span style="color:#111">();</span>
+      <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// while the two triangles have 4 certices, we need to split the vertices
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// so that they can have different normals
+</span><span style="color:#75715e"></span>      <span style="color:#00a8c8">const</span> <span style="color:#75af00">vertices</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">Float32Array</span><span style="color:#111">(</span> <span style="color:#111">[</span>
+         <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span>     <span style="color:#75715e">// 1A note that we need to keep this ccw
+</span><span style="color:#75715e"></span>         <span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span><span style="color:#111">,</span>       <span style="color:#75715e">// 1B
+</span><span style="color:#75715e"></span>         <span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">2</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span><span style="color:#111">,</span>       <span style="color:#75715e">// 1C   
+</span><span style="color:#75715e"></span>         <span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#ae81ff">1</span><span style="color:#111">,</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span>      <span style="color:#75715e">// second triangle
+</span><span style="color:#75715e"></span>         <span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">2</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span><span style="color:#111">,</span>       <span style="color:#75715e">// 2B
+</span><span style="color:#75715e"></span>         <span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span><span style="color:#111">,</span> <span style="color:#ae81ff">0</span>        <span style="color:#75715e">// 2C
+</span><span style="color:#75715e"></span>      <span style="color:#111">]);</span>
+      <span style="color:#75715e">// don&#39;t ask where we learn to call this &#34;position&#34; and &#34;normal&#34;
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// the only thing I can find is to read examples...
+</span><span style="color:#75715e"></span>      <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">setAttribute</span><span style="color:#111">(</span><span style="color:#d88200">&#39;position&#39;</span><span style="color:#111">,</span><span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">BufferAttribute</span><span style="color:#111">(</span><span style="color:#75af00">vertices</span><span style="color:#111">,</span><span style="color:#ae81ff">3</span><span style="color:#111">));</span>
+      <span style="color:#75715e">// in theory, we could &#34;compute vertex normals&#34; since the triangles are separate
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// so each vertex is just used once, so it will just average over the one triangle
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// see the TwoTrianglesBG for an example of computing them explicitly
+</span><span style="color:#75715e"></span>      <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">computeVertexNormals</span><span style="color:#111">();</span>
+
+      <span style="color:#75715e">// the colors
+</span><span style="color:#75715e"></span>      <span style="color:#00a8c8">const</span> <span style="color:#75af00">colors</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">Float32Array</span><span style="color:#111">(</span> <span style="color:#111">[</span>
+          <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span>    <span style="color:#75715e">// yellow (3 vertices)
+</span><span style="color:#75715e"></span>          <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span>
+          <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span>
+          <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">.65</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span>  <span style="color:#75715e">// orange (#FFA500)
+</span><span style="color:#75715e"></span>          <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">.65</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span>
+          <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">.65</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span> 
+      <span style="color:#111">]);</span>
+      <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">setAttribute</span><span style="color:#111">(</span><span style="color:#d88200">&#34;color&#34;</span><span style="color:#111">,</span><span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">BufferAttribute</span><span style="color:#111">(</span><span style="color:#75af00">colors</span><span style="color:#111">,</span><span style="color:#ae81ff">3</span><span style="color:#111">));</span>
+
+      <span style="color:#00a8c8">let</span> <span style="color:#75af00">material</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">MeshStandardMaterial</span><span style="color:#111">({</span>
+        <span style="color:#75af00">roughness</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0.75</span><span style="color:#111">,</span>
+        <span style="color:#75af00">vertexColors</span><span style="color:#f92672">:</span> <span style="color:#00a8c8">true</span>
+      <span style="color:#111">});</span>
+      <span style="color:#00a8c8">let</span> <span style="color:#75af00">mesh</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">Mesh</span><span style="color:#111">(</span><span style="color:#75af00">geometry</span><span style="color:#111">,</span> <span style="color:#75af00">material</span><span style="color:#111">);</span>
+  
+      <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>      <span style="color:#00a8c8">super</span><span style="color:#111">(</span><span style="color:#d88200">&#34;TwoTrianglesBuff&#34;</span><span style="color:#111">,</span> <span style="color:#75af00">mesh</span><span style="color:#111">);</span>
+    <span style="color:#111">}</span>
+  <span style="color:#111">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p>Notice that we had to split the vertices (so we have 6 of them) - for example (0,0,0) is repeated, once for each triangle. And note that we need to specify the colors for each of the 6 vertices.</p>
+<p>THREE has materials specifically designed to work with meshes. If you want materials such as <code>MeshStandardMaterial</code> to use vertex colors, you need to tell it to do so. As far as I can tell, if you tell <code>MeshStandardMaterial</code> that you want to use vertex colors, but you provide face colors instead, that&rsquo;s OK. Vertex colors override face colors (if you are in vertex color mode). The default ignores colors on the geometry.</p>
+<p>For normals, you can provide a normal for either the face or for each vertex on the face. THREE has a way to automatically compute the normals (so they are normal to the triangle). Notice that in both examples, we compute have THREE compute the normals for us. It will automatically create an attribute buffer to store them.</p>
+<h2 id="example-mesh-normals">Example: Mesh Normals</h2>
+<p>This example uses the same two triangles. Except that this time, the normals are done differently for each of the 3 versions. On the left, THREE computes the normals for us (see the line <code>geometry.computeFaceNormals();</code>). In the middle one, we assign each vertex on each face a normal value. This is the same normal that would have been computed for each triangle. The triangle on the right has the vertices in the middle (along the edge between the two triangles) pointing forward - to give the same normals as if it were a smooth, curved piece (rather than two triangles with a crease). Because the lights are on the sides, the middle of this object is dark. But, as you move it, notice the lighting behaves as if this were a curved object.</p>
+<iframe
+    title="08-01-02"
+    src="../../for_students/08-01-02.html"
+    class="includebox includebox-standard"
+    width="100%"
+    height="100%"
+    scrolling="no"
+    frameborder="0"
+></iframe>
+
+<p>Be sure to read the code in <a href="../../for_students/08-01-02.js" class="for_students">08-01-02.js</a> and understand how the meshes are put together.</p>
+<h2 id="a-note-on-buffergeometry">A Note on BufferGeometry</h2>
+<p>While <code>BufferGeometry</code> is the preferred way to do things in THREE, it can be less convenient if we want to see our triangles (use their &ldquo;real&rdquo; normals and/or have triangle colors). In practice, we don&rsquo;t usually want to see individual triangles, so this isn&rsquo;t a big problem.</p>
+<p>One trick: the documentation doesn&rsquo;t have a good list of what attributes we can make. If you noticed, so far we&rsquo;ve made buffers for position, normal, and color. The are other choices (we&rsquo;ll see &ldquo;uv&rdquo; later in this workbook). The answers to this get a little tricky, and depend on how the graphics hardware works. Basically, the names of the buffers are variables that get used in the programs that run on the graphics hardware to transform vertices and color pixels.</p>
+<h2 id="summary-meshes">Summary: Meshes</h2>
+<p>This is a reminder of what we learned about Meshes, and an example of how to make a very simple one (with two triangles). On <a href="../../docs/2/">Page &nbsp;2&nbsp; (Mesh Exercise)</a>, you&rsquo;ll get to try to make a more interesting mesh.</p>
+<p><a href="../../docs/2/" class="Next__Page">Next: Mesh Exercise </a></p>
+
+            
+
+<div>
+        <i>There are no points associated with this page.</i>
+    </div>
+			
+			
+		</div>
+	</article>
+</main>
+
+                </div>
+                <div class="sidebar">
+<h2 class="Side_Title">Workbook 8: Meshes and Textures</h2>
+<p class="Side__Note">Pages:</p>
+<ul class="Side__List">
+    <li class="Side__Item Side__Unselected"><a href="../../">Index (Meshes and Textures)</a></li>
+        <li class="Side__Item Side__Selected"> 1: Meshes: What you need to know </li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/2/">2: Mesh Exercise </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/3/">3: Texture Basics </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/4/">4: Textures in THREE </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/5/">5: Dice and Dominos (Exercise 2 and 3) </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/6/">6: Graphics Town Buildings (Exercise 4) </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/7/">7: A Car for Graphics Town (ex 5) </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/4-geom/">4-geom: Texture Coordinates for Old-Style Geometry </a></li>
+</ul>
+</div>
+</div>
+    </body>
+</html>

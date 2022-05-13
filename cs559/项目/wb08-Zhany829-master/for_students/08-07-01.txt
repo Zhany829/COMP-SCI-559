@@ -1,0 +1,12 @@
+Please describe the vehicles you created and how you made them in this file 08-07-01.txt
+
+1. Car with flash texture (left one)
+
+Firstly, I made the door and head and tail of the car.
+Then I made two flash texture on the two sides of the car.
+Finally, I made four tyres for the car.
+
+2. Truck with bumblebee tecture (right one)
+
+Firstly, I made a truck head and box with six tyres.
+Then I colored the truck with some color and bumblebee tecture

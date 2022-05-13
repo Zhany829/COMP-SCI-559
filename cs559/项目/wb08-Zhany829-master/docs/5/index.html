@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+    
+<!-- CS559 Workbook Pages - page content &copy; 2021, Michael Gleicher -->
+<!-- This page is part of a Workbook developed for the 
+    CS559 Computer Graphics Class at the University of Wisconsin
+    https://graphics.cs.wisc.edu/Courses/559-sp2021/ -->
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="../../css/workbook.css">
+        <script src="../../js/resizeIFrames.js"></script>
+    </head>
+    <body>
+        <div class="container container--outer"><div class="maincolumn">
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header"><h1 class="post__title">Page 5: Dice and Dominos (Exercise 2 and 3)</h1>
+		</header>
+        
+        
+        
+		<div class="content post__content clearfix"><p>We&rsquo;ve made lots of boxes in THREE. Now we&rsquo;ll turn a box into a die (one of a set of dice) and into a domino. All this means is we take a white box and put some dots on the side. For dice, we put a different number of dots on each side. For a domino, we put two sets of dots on the top.</p>
+<p>We&rsquo;ve provided you with a simple texture with all 6 patterns of dots (1-6) in the file <code>images/dice_texture.png</code>. You are welcome to make a nicer texture file (don&rsquo;t forget to include it in the repo when you hand it in!). If you make a texture, it should contain all 6 dot patterns.</p>
+<p>For both the dice and domino(s) it is OK if they are simply boxes - as long as they have the right texture on them.</p>
+<p>In the text below, I refer to &ldquo;numbers&rdquo; of the side, but that means the number of dots you can see on the side.</p>
+<h2 id="dice-exercise">Dice Exercise</h2>
+<p>Make two dice. This means defining a single class for dice and then making two instances. You should use the CS559 framework for this (so the new class is a subclass of <code>GrObject</code>). We&rsquo;ve gotten things started with <a href="../../for_students/08-05-01.html" class="for_students">08-05-01.html</a> and <a href="../../for_students/08-05-01.js" class="for_students">08-05-01.js</a></p>
+<p>Place the dice on the groundplane. They should be oriented so the numbers on top are different. This should be as simple as rotating one of the dice. We should be able to see that the dice have different numbers on each side (we can&rsquo;t see the bottom).</p>
+<iframe
+    title="08-05-01"
+    src="../../for_students/08-05-01.html"
+    class="includebox includebox-standard"
+    width="100%"
+    height="100%"
+    scrolling="no"
+    frameborder="0"
+></iframe>
+
+<p>Note: it is possible to do this assignment by using a THREE Box geometry and assigning a different material to each side. However, it is probably easier to define your own geometry and assign correct texture coordinates. And this is good practice for future things. You may use either <code>Geometry</code> or <code>BufferGeometry</code> - I recommend <code>BufferGeometry</code>.</p>
+<p>It is OK to make your dice be cubes. Real dice (usually) have rounded edges. Making rounded edges is hard (we&rsquo;ll give you advanced points, but this is probably not worth it).</p>
+<h2 id="dominos-exercise">Dominos Exercise</h2>
+<p>Make at least one domino. If you make only one domino, it should be a double 6.</p>
+<figure>
+    <img src="../../images/DBL6-Domino.jpg"/> 
+</figure>
+
+<p>It&rsquo;s OK if your domino is just a box (twice as wide as it is deep, relatively thin). You need to have the dots on both sides of the top. The line between the sides is optional.</p>
+<p>You can use the texture you used for the dice for this exercise. This is the recommended/expected way to do the assignment, but it is not required.</p>
+<p>Note: you could try to do this by making a single texture for the entire top of the domino (with two sixes on one texture). Please don&rsquo;t do this.</p>
+<p>The requirement is to make one domino. A double six. If you&rsquo;re ambitious, you can make a set of dominos (up to 6-6). Here&rsquo;s what a set of dominos looks like <a href="https://www.123rf.com/photo_48347848_stock-vector-full-set-of-realistic-white-domino-pieces-vector-illustration-.html" target="_blank">in a drawing</a>. You could even arrange the dominos on the table in a legal way (numbers have to match - if you don&rsquo;t know the rules for dominos, don&rsquo;t worry).</p>
+<p>It is OK if your domino is a white box except for the black dots. As with the dice, real dominos usually have rounded edges. Don&rsquo;t worry about it (there are more interesting advanced points on the next pages).</p>
+<p>There is a set of files <a href="../../for_students/08-05-02.html" class="for_students">08-05-02.html</a> and <a href="../../for_students/08-05-02.js" class="for_students">08-05-02.js</a> for you to put your work into. You should use the CS559 Framework, and define a new class for dominos. If you really wanted to do it right, the constructor could take 2 numbers (one for the number of dots to appear on each side). The preferred way to implement this is to define your own Geometry, where the top of the box is made of at least 4 triangles, with texture coordinates that put the right numbers where they should go.</p>
+<iframe
+    title="08-05-02"
+    src="../../for_students/08-05-02.html"
+    class="includebox includebox-standard"
+    width="100%"
+    height="100%"
+    scrolling="no"
+    frameborder="0"
+></iframe>
+
+<p>You can get advanced points for making rounded edges on your dominos and for placing more than 4 dominos on the table in a legal arrangement (obey the rules of dominos).</p>
+<a href="../../docs/6/" class="Next__Page">Next: Graphics Town Buildings (Exercise 4) </a>
+
+            
+
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <div class="page-rubric-container">
+    <details class="page__rubric">
+    <summary>Page 5 Rubric (16 points total)</summary>
+    <br/>
+    <div class="page-rubric-grid">
+            <div class="page-rubric-grid-header rubric-box-regular">Points (10):</div><div class="page-rubric-grid-box rubric-box-regular">Box 08-05-01</div>
+                <div class="page-rubric-grid-points rubric-box-regular">2 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-regular">There are 2 dice</div><div class="page-rubric-grid-box rubric-box-regular">Box 08-05-01</div>
+                <div class="page-rubric-grid-points rubric-box-regular">2 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-regular">Dice have numbers on their sides</div><div class="page-rubric-grid-box rubric-box-regular">Box 08-05-01</div>
+                <div class="page-rubric-grid-points rubric-box-regular">2 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-regular">Dice have correct numbers on their sides</div><div class="page-rubric-grid-box rubric-box-regular">Box 08-05-01</div>
+                <div class="page-rubric-grid-points rubric-box-regular">1 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-regular">The two dice show different numbers on top</div><div class="page-rubric-grid-box rubric-box-regular">Box 08-05-02</div>
+                <div class="page-rubric-grid-points rubric-box-regular">1 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-regular">At least one domino</div><div class="page-rubric-grid-box rubric-box-regular">Box 08-05-02</div>
+                <div class="page-rubric-grid-points rubric-box-regular">2 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-regular">The domino is a double 6 (correct texture)</div>
+            <div class="page-rubric-grid-header rubric-box-bonus">Advanced points (6):</div><div class="page-rubric-grid-box rubric-box-bonus">Box 08-05-01</div>
+                <div class="page-rubric-grid-points rubric-box-bonus">2 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-bonus">Rounded edges (Dice)</div><div class="page-rubric-grid-box rubric-box-bonus">Box 08-05-02</div>
+                <div class="page-rubric-grid-points rubric-box-bonus">2 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-bonus">Rounded edges (Domino)</div><div class="page-rubric-grid-box rubric-box-bonus">Box 08-05-02</div>
+                <div class="page-rubric-grid-points rubric-box-bonus">1 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-bonus">More dominos (with different numbers)</div><div class="page-rubric-grid-box rubric-box-bonus">Box 08-05-02</div>
+                <div class="page-rubric-grid-points rubric-box-bonus">1 pt</div>
+                <div class="page-rubric-grid-desc rubric-box-bonus">Legal domino arrangement (at least 4 dominos)</div></div>
+    </details>
+    </div>
+			
+			
+		</div>
+	</article>
+</main>
+
+                </div>
+                <div class="sidebar">
+<h2 class="Side_Title">Workbook 8: Meshes and Textures</h2>
+<p class="Side__Note">Pages:</p>
+<ul class="Side__List">
+    <li class="Side__Item Side__Unselected"><a href="../../">Index (Meshes and Textures)</a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/1/">1: Meshes: What you need to know </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/2/">2: Mesh Exercise </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/3/">3: Texture Basics </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/4/">4: Textures in THREE </a></li>
+        <li class="Side__Item Side__Selected"> 5: Dice and Dominos (Exercise 2 and 3) </li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/6/">6: Graphics Town Buildings (Exercise 4) </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/7/">7: A Car for Graphics Town (ex 5) </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/4-geom/">4-geom: Texture Coordinates for Old-Style Geometry </a></li>
+</ul>
+</div>
+</div>
+    </body>
+</html>

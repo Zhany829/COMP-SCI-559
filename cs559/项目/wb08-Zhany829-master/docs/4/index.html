@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    
+<!-- CS559 Workbook Pages - page content &copy; 2021, Michael Gleicher -->
+<!-- This page is part of a Workbook developed for the 
+    CS559 Computer Graphics Class at the University of Wisconsin
+    https://graphics.cs.wisc.edu/Courses/559-sp2021/ -->
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="../../css/workbook.css">
+        <script src="../../js/resizeIFrames.js"></script>
+    </head>
+    <body>
+        <div class="container container--outer"><div class="maincolumn">
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header"><h1 class="post__title">Page 4: Textures in THREE</h1>
+		</header>
+        
+        
+        
+		<div class="content post__content clearfix"><p>Using textures is notoriously tricky because there are a lot of steps involved. Fortunately, THREE makes it remarkably easy - it takes care of all of the little details, allowing you to focus on the big parts (setting coordinates, defining the texture image).</p>
+<p>If you want a sense of how much had to happen to get a cube with texture on it, have a look at the <a href="https://cs559.github.io/S20-FrameworkDemos/WebGLTexture/texture.html" target="_blank">2015 example</a>! And this doesn&rsquo;t do any lighting!</p>
+<p>Fortunately, THREE takes care of all of this for us. And it gives us access to lots of fancier kinds of texture things as well.</p>
+<h2 id="the-complete-example">The Complete Example</h2>
+<p>We&rsquo;re going to do this backwards. Here is a complete example program. It is the two triangles from <a href="../../docs/1/">Page &nbsp;1&nbsp; (Meshes: What you need to know)</a>, with an extra plane and a texture added. The plane is so you can see what the texture looks like when flat. There are a few changes - the triangles are white, not yellow.</p>
+<iframe
+    title="08-04-01-buff"
+    src="../../for_students/08-04-01-buff.html"
+    class="includebox includebox-standard"
+    width="100%"
+    height="100%"
+    scrolling="no"
+    frameborder="0"
+></iframe>
+
+<p>We&rsquo;ll explain how it works in the following, but you might want to have a look first.</p>
+<p>On the left, we have the triangles without texture, for reference. In the center, we put the texture on the triangles. On the right, we again put the texture on, but adjust the texture coordinates - the left triangle gets its colors from the lower-left part of the texture map (as it appears on the square), and the right triangle gets its colors from the upper right corner.</p>
+<p>There are two versions of the code: It&rsquo;s in <a href="../../for_students/08-04-01-buff.js" class="for_students">08-04-01-buff.js</a> using buffer geometry, and <a href="../../for_students/08-04-01-geom.js" class="for_students">08-04-01-geom.js</a> using old-fashioned geometry. For this example, the buffer geometry version is actually easier.</p>
+<h2 id="texture-coordinates-in-three">Texture Coordinates in THREE</h2>
+<p>Most THREE primitives have reasonable texture coordinates defined. For example, the square (a THREE <code>PlaneGeometry</code>) in the demo 1 has its u,v going from 0 to 1 over the course of a plane.</p>
+<p>For user-defined geometries (of class <code>BufferGeometry</code> or <code>Geometry</code>), we have to provide texture coordinates ourselves. We need to split a vertex if it needs to have different coordinates for the different triangles it is part of (as we did with color and normals before).</p>
+<p>Texture coordinates for <code>Geometry</code> are done in a flexible way that made it a bit complicated. It is actually easier with <code>BufferGeometry</code>, so we&rsquo;ll focus on that. We&rsquo;ll provide some info on the old style ones on a separate page <a href="../../docs/4-geom/">Page &nbsp;4-geom&nbsp; (Texture Coordinates for Old-Style Geometry)</a>.</p>
+<p>Setting up the texture coordinates for the <code>BufferGeometry</code> is simple: we make a new <code>BufferAttribute</code> that is the uvs. We give it an array of 2 * number of vertices (a uv pair for each vertex). Here&rsquo;s the code from <a href="../../for_students/08-04-01-buff.js" class="for_students">08-04-01-buff.js</a> - it&rsquo;s actually only 2 statements (since I put each vertex&rsquo;s data on a separate line, it takes longer).</p>
+
+    
+    <div class="highlight"><div style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">65
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">66
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">67
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">68
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">69
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">70
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">71
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">72
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">73
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">      <span style="color:#00a8c8">const</span> <span style="color:#75af00">uvs</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">Float32Array</span><span style="color:#111">(</span> <span style="color:#111">[</span>
+        <span style="color:#ae81ff">0</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span>
+        <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span><span style="color:#111">,</span>
+        <span style="color:#ae81ff">0</span><span style="color:#111">,</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span>        
+        <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span>
+        <span style="color:#ae81ff">0</span><span style="color:#111">,</span><span style="color:#ae81ff">1</span><span style="color:#111">,</span>
+        <span style="color:#ae81ff">1</span><span style="color:#111">,</span><span style="color:#ae81ff">0</span>
+      <span style="color:#111">]);</span>
+      <span style="color:#75af00">geometry</span><span style="color:#111">.</span><span style="color:#75af00">setAttribute</span><span style="color:#111">(</span><span style="color:#d88200">&#39;uv&#39;</span><span style="color:#111">,</span><span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">BufferAttribute</span><span style="color:#111">(</span><span style="color:#75af00">uvs</span><span style="color:#111">,</span><span style="color:#ae81ff">2</span><span style="color:#111">));</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p>Notice that I need to make a <strong>typed array</strong> of the values (that&rsquo;s what <code>FloatArray32</code> does). It has 12 values (6 vertices, 2 values per vertex - u and v). I then use that array to make a <code>BuffferAttribute</code> that gets assigned to &ldquo;uv&rdquo;.</p>
+<h2 id="using-the-texture">Using the Texture</h2>
+<p>Once we have UV values we simply need to make sure our material knows to use those UV values and color the triangles using the correct map. In <a href="../../for_students/08-04-01-buff.js" class="for_students">08-04-01-buff.js</a> it is done by:</p>
+
+    
+    <div class="highlight"><div style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">77
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">78
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">79
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">80
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">81
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">82
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">      <span style="color:#00a8c8">let</span> <span style="color:#75af00">tl</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">TextureLoader</span><span style="color:#111">().</span><span style="color:#75af00">load</span><span style="color:#111">(</span><span style="color:#d88200">&#34;../textures/UV_Grid_Sm.jpg&#34;</span><span style="color:#111">);</span>
+      <span style="color:#00a8c8">let</span> <span style="color:#75af00">material</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">MeshStandardMaterial</span><span style="color:#111">({</span>
+        <span style="color:#75af00">color</span><span style="color:#f92672">:</span> <span style="color:#d88200">&#34;white&#34;</span><span style="color:#111">,</span>
+        <span style="color:#75af00">roughness</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0.75</span><span style="color:#111">,</span>
+        <span style="color:#75af00">map</span><span style="color:#f92672">:</span> <span style="color:#75af00">tl</span>
+      <span style="color:#111">});</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p>Here there are two steps: first, we load an image texture (more on that in a moment), and then we create the material. When we create the material, it can be as simple as setting the <code>map</code> attribute to be the texture we want to use. Technically, we are using the texture as a <strong>color map</strong>. Note that we make the material white: the color will be blended with the texture color, so if you want to see the actual colors in the texture, you need to have the base color be white.</p>
+<p>We can specify other properties for the material. In the example, I specified <code>roughness</code>. You can even specify <code>color</code>, and this color will be combined with the colors from the texture. And of course, with a <code>MeshStandardMaterial</code>, the colors are affected by lighting as well. If you want to use textures but do not want the color affected by lighting, use a <code>MeshBasicMaterial</code>.</p>
+<p>THREE allows us to control many properties of how textures are used. These will make more sense once we learn about how texturing works in class. For now, the default parameters will probably be fine.</p>
+<h2 id="texture-image-loading-in-three">Texture Image Loading in THREE</h2>
+<p>In order to have a texture image, we need to get the image from somewhere. Usually, this is from some image file.</p>
+<p>Loading an image into a texture is tricky. We need to load the image. We need to wait until the image is loaded. We need to process the image and put it into a special format. We need to attach the image to its surface.</p>
+<p>Fortunately, THREE takes care of all this for you with a texture loader. You say &ldquo;load me a texture&rdquo;, and it loads the texture in and sets things up once its loaded. A cool feature: before the texture is loaded, things still work (it just shows up as blank). Remember, this is JavaScript asynchronicity, so there really isn&rsquo;t any multi-threading. You need to make sure you return back to the main event loop for loading to happen (remember how <code>requestAnimationFrame</code> works?).</p>
+<p>The line of code is:</p>
+
+    
+    <div class="highlight"><div style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">77
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">      <span style="color:#00a8c8">let</span> <span style="color:#75af00">tl</span> <span style="color:#f92672">=</span> <span style="color:#00a8c8">new</span> <span style="color:#75af00">T</span><span style="color:#111">.</span><span style="color:#75af00">TextureLoader</span><span style="color:#111">().</span><span style="color:#75af00">load</span><span style="color:#111">(</span><span style="color:#d88200">&#34;../textures/UV_Grid_Sm.jpg&#34;</span><span style="color:#111">);</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="texture-re-use">Texture Re-Use</h2>
+<p>It&rsquo;s so easy to load and use textures with THREE that you might forget how many you&rsquo;ve loaded. In general, using lots of textures can be a problem: they take up a lot of memory.</p>
+<p>For example, in the example code (<code>for_students/08-04-01.js</code>), the texture file <code>/textures/UV_Grid_Sm.jpg</code> is loaded three times. A separate copy will be loaded for each instance of <code>TwoTrianglesTextured</code> and <code>TwoTrianglesTextured2</code> that we create. Right now, there is just one of each (so that&rsquo;s two copies of the texture - a third is used for the plane). If we made a lot of these objects, the memory usage would add up fast.</p>
+<p>Therefore, when we use textures, we need to be careful to re-use things that we&rsquo;ve loaded already and not load multiple copies. In fact, we might want to try to re-use the same texture over and over to save memory. Think about this when you make your own objects for future projects.</p>
+<p>The obvious way to fix this in <a href="../../for_students/08-04-01-buff.js" class="for_students">08-04-01-buff.js</a> would be to move the line that loads the texture to near the top of the file (after the THREE library is loaded), outside of any function. That way <code>tl</code> would be a &ldquo;module&rdquo; variable (effectively a global), rather than a local variable. The texture would be loaded once, when the module is first loaded.</p>
+<h2 id="summary-textures-in-three">Summary: Textures in THREE</h2>
+<p>That was a quick summary of how textures are applied in THREE. On <a href="../../docs/5/">Page &nbsp;5&nbsp; (Dice and Dominos (Exercise 2 and 3))</a>, you can try doing it yourself!</p>
+
+            
+
+<div>
+        <i>There are no points associated with this page.</i>
+    </div>
+			
+			
+		</div>
+	</article>
+</main>
+
+                </div>
+                <div class="sidebar">
+<h2 class="Side_Title">Workbook 8: Meshes and Textures</h2>
+<p class="Side__Note">Pages:</p>
+<ul class="Side__List">
+    <li class="Side__Item Side__Unselected"><a href="../../">Index (Meshes and Textures)</a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/1/">1: Meshes: What you need to know </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/2/">2: Mesh Exercise </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/3/">3: Texture Basics </a></li>
+        <li class="Side__Item Side__Selected"> 4: Textures in THREE </li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/5/">5: Dice and Dominos (Exercise 2 and 3) </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/6/">6: Graphics Town Buildings (Exercise 4) </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/7/">7: A Car for Graphics Town (ex 5) </a></li>
+        <li class="Side__Item Side__Unselected"> <a href="../../docs/4-geom/">4-geom: Texture Coordinates for Old-Style Geometry </a></li>
+</ul>
+</div>
+</div>
+    </body>
+</html>
